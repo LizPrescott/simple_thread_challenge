@@ -1,7 +1,7 @@
 
 from collections import namedtuple
 from datetime import date
-import constants
+import app.constants as constants
 
 Dates = namedtuple('Dates', ["name", "start_date", "end_date", "is_high_cost"])
 
