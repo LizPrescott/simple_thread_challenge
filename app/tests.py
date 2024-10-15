@@ -43,9 +43,9 @@ def test_high_to_low_overlap():
     ]
 
 
-def test_multiple_projects_no_overlaps():
+def test_contiguous_projects():
     assert calculate_reimbursement(set_3) == [
-      {"Project 1": constants.TRAVEL_DAY_LOW*2 + constants.FULL_DAY_LOW},
+      {"Project 1": (constants.TRAVEL_DAY_LOW*2) + constants.FULL_DAY_LOW},
       {"Project 2": constants.TRAVEL_DAY_HIGH + (constants.FULL_DAY_HIGH*2)},
       {"Project 3": constants.TRAVEL_DAY_HIGH}
     ]

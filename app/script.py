@@ -20,7 +20,7 @@ def parse_input(string):
     return Dates(name, start_date, end_date, is_high_cost)
 
 
-def calculate_project_cost(project):
+def calculate_project_cost(project, max_travel_days: int, max_full_days: int):
     high = project.is_high_cost
     if high:
         travel_day_cost = constants.TRAVEL_DAY_HIGH
@@ -28,10 +28,18 @@ def calculate_project_cost(project):
     else:
         travel_day_cost = constants.TRAVEL_DAY_LOW
         full_day_cost = constants.FULL_DAY_LOW
-    # TODO: Logic for contiguous projects in a set
-    #  Minus 1 when the last day is a travel day, subtract that day
-    full_days = project.end_date.day - project.start_date.day - 1
-    return ((full_days * full_day_cost) + (travel_day_cost*2))
+    return ((max_full_days * full_day_cost) + (travel_day_cost * max_travel_days))
+
+
+def base_case_full_days(project):
+    full_days = project.end_date.day - project.start_date.day
+    if full_days > 0:
+        full_days -= 1
+    return full_days
+
+
+def project_overlap(current_project, next_project):
+    return next_project.start_date.day - current_project.end_date.day
 
 
 def calculate_reimbursement(list_of_strings):
@@ -39,7 +47,38 @@ def calculate_reimbursement(list_of_strings):
     if not list_of_strings:
         return
     current_project = parse_input(list_of_strings[0])
-    cost = calculate_project_cost(current_project)
-    #   if project.end_date == next.end_date:
-    #     total_cost += full_day_cost
-    return [{current_project.name: cost}]
+    # Single project is a special case
+    if len(list_of_strings) == 1:
+        return [
+            {
+                current_project.name: calculate_project_cost(current_project, 2, base_case_full_days(current_project))}
+          ]
+    results = []
+    next_project_index = 1
+    next_project = list_of_strings[next_project_index]
+    while next_project:
+        max_travel_days = 2
+        max_full_days = base_case_full_days(current_project)
+        next_project = parse_input(next_project)
+        if current_project.end_date.day + 1 == next_project.start_date.day:
+              max_travel_days -= 1
+              max_full_days += 1
+                
+        cost = calculate_project_cost(
+            current_project,
+            max_full_days=max_full_days,
+            max_travel_days=max_travel_days
+            )
+        results.append({current_project.name: cost})
+        current_project = next_project
+        next_project_index += 1
+        # catch the index error on last project. Will not have a next project
+        try:
+            next_project = list_of_strings[next_project_index]
+        except IndexError:
+            # current project is now next and final project
+            # TODO Handle second to last project has higher cost and overlaps
+            cost = calculate_project_cost(current_project, 1, base_case_full_days(current_project))
+            results.append({current_project.name: cost})
+            break
+    return results
