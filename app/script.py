@@ -3,6 +3,11 @@ from datetime import date
 import app.constants as constants
 
 
+class ProjectSet:
+    def __init__(self, input_list):
+        self.length = len(input_list)
+
+
 class Project:
     def __init__(self, name, start_date, end_date, is_high_cost):
         self.name = name
@@ -10,6 +15,7 @@ class Project:
         self.end_date = end_date
         self.is_high_cost = is_high_cost
         self.travel_days = 2
+        # Or zero avoids negative number of days
         self.full_days = (self.end_date.day - self.start_date.day - 1) or 0
 
     @staticmethod
@@ -25,7 +31,7 @@ class Project:
         start_date = cls.parse_date(start_date_str)
         is_high_cost = "High" in cost_string
         return cls(name, start_date, end_date, is_high_cost)
-  
+ 
     def remove_travel_day(self):
         self.travel_days -= 1
         self.full_days += 1
@@ -40,7 +46,10 @@ class Project:
         return (self.full_days * full_day_cost) + (travel_day_cost * self.travel_days)
 
     def project_overlap(self, next_project):
-        return next_project.start_date.day - self.end_date.day
+        return next_project.start_date.day - self.end_date.day + 1
+   
+    def handle_final_project(self):
+        pass
 
 
 def calculate_reimbursement(list_of_strings):
@@ -67,7 +76,7 @@ def calculate_reimbursement(list_of_strings):
             current_project.remove_travel_day()
             next_project.remove_travel_day()
             project_overlap = current_project.project_overlap(next_project)
-            if next_project.is_high_cost and not current_project.is_high_cost:
+            if current_project.is_high_cost:
                 next_project.full_days -= project_overlap
             else:
                 current_project.full_days -= project_overlap
