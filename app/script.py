@@ -5,6 +5,7 @@ import app.constants as constants
 
 class ProjectSet:
     def __init__(self, input_list):
+        
         self.length = len(input_list)
 
 
@@ -15,6 +16,7 @@ class Project:
         self.end_date = end_date
         self.is_high_cost = is_high_cost
         self.travel_days = 2
+        # Allow full days to get below zero to account for diffs in travel days
         self.full_days = (self.end_date - self.start_date).days - 1
 
     @staticmethod
@@ -42,7 +44,7 @@ class Project:
         else:
             travel_day_cost = constants.TRAVEL_DAY_LOW
             full_day_cost = constants.FULL_DAY_LOW
-        return (self.full_days * full_day_cost) + (travel_day_cost * self.travel_days)
+        return max((self.full_days * full_day_cost) + (travel_day_cost * self.travel_days), 0)
 
     def project_overlap(self, next_project):
         return next_project.start_date.day - self.end_date.day + 1
