@@ -1,5 +1,5 @@
 
-from datetime import date
+from datetime import date, timedelta
 import app.constants as constants
 
 
@@ -15,8 +15,7 @@ class Project:
         self.end_date = end_date
         self.is_high_cost = is_high_cost
         self.travel_days = 2
-        # Or zero avoids negative number of days
-        self.full_days = (self.end_date.day - self.start_date.day - 1) or 0
+        self.full_days = (self.end_date - self.start_date).days - 1
 
     @staticmethod
     def parse_date(date_string):
@@ -69,10 +68,10 @@ def calculate_reimbursement(list_of_strings):
     while next_project:
         next_project = Project.from_string(next_project)
         project_overlap = current_project.project_overlap(next_project)
-        if current_project.end_date.day + 1 == next_project.start_date.day:
+        if (next_project.start_date - current_project.end_date).days == 1:
             current_project.remove_travel_day()
             next_project.remove_travel_day()
-        elif current_project.end_date.day >= next_project.start_date.day:
+        elif current_project.end_date >= next_project.start_date:
             current_project.remove_travel_day()
             next_project.remove_travel_day()
             project_overlap = current_project.project_overlap(next_project)
