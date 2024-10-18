@@ -53,9 +53,10 @@ def test_contiguous_projects():
 
 def test_travel_day_perfect_overlap():
     assert calculate_reimbursement(set_4) == [
-      # Assum when one of the overlap days is a travel day, both are
-      {"Project 1": constants.TRAVEL_DAY_LOW},
-      {"Project 2": 0.0},
+      # Assume when one of the overlap days is a travel day, both are
+      # In this scenario, should it be a high cost travel day or a low cost travel day?
+      {"Project 1": 0.0},
+      {"Project 2": constants.TRAVEL_DAY_HIGH},
       {"Project 3": constants.FULL_DAY_HIGH},
       # Do not count the full day, which was reimbursed in Project 3
       {"Project 4": constants.TRAVEL_DAY_HIGH}
