@@ -1,12 +1,6 @@
 
-from datetime import date, timedelta
+from datetime import date
 import app.constants as constants
-
-
-class ProjectSet:
-    def __init__(self, input_list):
-        
-        self.length = len(input_list)
 
 
 class Project:
@@ -32,7 +26,7 @@ class Project:
         start_date = cls.parse_date(start_date_str)
         is_high_cost = "High" in cost_string
         return cls(name, start_date, end_date, is_high_cost)
- 
+
     def remove_travel_day(self):
         self.travel_days -= 1
         self.full_days += 1
@@ -48,9 +42,6 @@ class Project:
 
     def project_overlap(self, next_project):
         return next_project.start_date.day - self.end_date.day + 1
-   
-    def handle_final_project(self):
-        pass
 
 
 def calculate_reimbursement(list_of_strings):
@@ -60,11 +51,8 @@ def calculate_reimbursement(list_of_strings):
     current_project = Project.from_string(list_of_strings[0])
     # Single project is a special case
     if len(list_of_strings) == 1:
-        return [
-            {
-                current_project.name: current_project.calculate_project_cost()}
-          ]
-    results = []
+        return current_project.calculate_project_cost()
+    total = 0.0
     next_project_index = 1
     next_project = list_of_strings[next_project_index]
     while next_project:
@@ -81,17 +69,21 @@ def calculate_reimbursement(list_of_strings):
                 next_project.full_days -= project_overlap
             else:
                 current_project.full_days -= project_overlap
-        cost = current_project.calculate_project_cost()
-        results.append({current_project.name: cost})
+        total += current_project.calculate_project_cost()
         current_project = next_project
         next_project_index += 1
         # catch the index error on last project. Will not have a next project
         try:
             next_project = list_of_strings[next_project_index]
         except IndexError:
-            # current project is now next and final project
-            # TODO Handle second to last project has higher cost and overlaps
-            cost = current_project.calculate_project_cost()
-            results.append({current_project.name: cost})
+            total += current_project.calculate_project_cost()
             break
-    return results
+    return total
+
+
+# def calculate_total(list_of_strings):
+#     # Handles empty project sets
+#     if not list_of_strings:
+#         return 0.0
+#     for string in list_of_strings:
+#         travel_cost
