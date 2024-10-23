@@ -19,6 +19,18 @@ def test_base_case():
     # assert calculate_total(input) == project_1_total
 
 
+def test_no_overlap():
+    input = [
+      "Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/1/15",
+      "Project 2: Low Cost City Start Date: 9/6/15 End Date: 9/8/15"
+    ]
+    project_1_total = TRAVEL_DAY_LOW
+    project_2_total = TRAVEL_DAY_LOW*2 + FULL_DAY_LOW
+    assert calculate_reimbursement(input) == sum([
+         project_1_total, project_2_total
+         ])
+
+
 def test_high_to_low_overlap():
     input = [
       "Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/1/15",
@@ -27,7 +39,7 @@ def test_high_to_low_overlap():
     ]
     project_1_total = TRAVEL_DAY_LOW
     project_2_total = FULL_DAY_HIGH*5 # 9/2 + 9/3 + 9/4 + 9/5 + 9/6
-    project_3_total = TRAVEL_DAY_LOW + FULL_DAY_LOW # 9/8 + 9/7
+    project_3_total = TRAVEL_DAY_LOW + FULL_DAY_LOW # 9/7 + 9/8
     assert calculate_reimbursement(input) == sum([
          project_1_total, project_2_total, project_3_total
          ])
