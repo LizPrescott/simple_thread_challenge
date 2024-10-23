@@ -26,10 +26,11 @@ class Project:
         self.start_date = start_date
         self.end_date = end_date
         self.is_high_cost = is_high_cost
-        self.travel_days = 2
-        # Allow full days to get below zero to account for diffs in travel days
-        self.full_days = (self.end_date - self.start_date).days - 1
-        self.duration = max(((self.end_date - self.start_date).days - 1),0)
+        self.full_days = max((self.end_date - self.start_date).days - 1, 0)
+        # +1 to account for opening days
+        self.duration = (self.end_date - self.start_date).days + 1
+        self.travel_days = min(2, self.duration)
+
 
     @staticmethod
     def parse_date(date_string):
@@ -49,6 +50,10 @@ class Project:
         self.travel_days -= 1
         self.full_days += 1
 
+    def restore_travel_day(self):
+        self.travel_days += 1
+        self.full_days -= 1
+
     def calculate_project_cost(self):
         if self.is_high_cost:
             travel_day_cost = TRAVEL_DAY_HIGH
@@ -65,6 +70,7 @@ def handle_contiguous_projects(current_project, next_project):
 
 
 def handle_overlap(current_project, next_project, project_overlap):
+    # Need to handle single day projects differently?
     current_project.replace_travel_day()
     next_project.replace_travel_day()
     if not next_project.is_high_cost:
@@ -91,13 +97,10 @@ def calculate_reimbursement(list_of_strings):
         if project_overlap == 0:
             handle_contiguous_projects(current_project, next_project)
         if project_overlap > 0:
-            handle_overlap(current_project, next_project, project_overlap)    
+            handle_overlap(current_project, next_project, project_overlap)
         total += current_project.calculate_project_cost()
         current_project = next_project
-    # Final Project costs
-    total += current_project.calculate_project_cost()
+    if not next_project.travel_days:
+        next_project.restore_travel_day()   
+    total += next_project.calculate_project_cost()
     return total
-
-
-
-                    
