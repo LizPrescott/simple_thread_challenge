@@ -45,7 +45,7 @@ class Project:
         is_high_cost = "High" in cost_string
         return cls(name, start_date, end_date, is_high_cost)
 
-    def remove_travel_day(self):
+    def replace_travel_day(self):
         self.travel_days -= 1
         self.full_days += 1
 
@@ -59,19 +59,22 @@ class Project:
         return max((self.full_days * full_day_cost) + (travel_day_cost * self.travel_days), 0)
 
 
-def handle_overlap(current_project, next_project):
-    project_overlap = (current_project.end_date - next_project.start_date).days + 1
-    if project_overlap == 0:
-        # Projects 1 and 2 in test_contiguous_projects. overlap 2
-        current_project.remove_travel_day()
-        next_project.remove_travel_day()
-    elif project_overlap > 0:
-        current_project.remove_travel_day()
-        next_project.remove_travel_day()
-        if not next_project.is_high_cost:
-            next_project.full_days -= project_overlap
-        else:
-            current_project.full_days -= project_overlap
+def handle_contiguous_projects(current_project, next_project):
+    current_project.replace_travel_day()
+    next_project.replace_travel_day()
+
+
+def handle_overlap(current_project, next_project, project_overlap):
+    current_project.replace_travel_day()
+    next_project.replace_travel_day()
+    if not next_project.is_high_cost:
+        next_project.full_days -= project_overlap
+    else:
+        current_project.full_days -= project_overlap
+    # Need a test of overlapping low cost projects longer than a day
+    # Also need a test of longer overlaps
+        pass
+
 
 def calculate_reimbursement(list_of_strings):
     # Handles empty project sets
@@ -84,7 +87,11 @@ def calculate_reimbursement(list_of_strings):
         return current_project.calculate_project_cost()
     total = 0
     for next_project in starting_iter:
-        handle_overlap(current_project, next_project)         
+        project_overlap = (current_project.end_date - next_project.start_date).days + 1
+        if project_overlap == 0:
+            handle_contiguous_projects(current_project, next_project)
+        if project_overlap > 0:
+            handle_overlap(current_project, next_project, project_overlap)    
         total += current_project.calculate_project_cost()
         current_project = next_project
     # Final Project costs
