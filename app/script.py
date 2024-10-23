@@ -58,21 +58,20 @@ class Project:
             full_day_cost = FULL_DAY_LOW
         return max((self.full_days * full_day_cost) + (travel_day_cost * self.travel_days), 0)
 
-    def project_overlap(self, next_project):
-        return (next_project.start_date - self.end_date).days + 1
 
-    def handle_overlap(self, next_project, project_overlap):
-        if (next_project.start_date - self.end_date).days == 1:
-            self.remove_travel_day()
-            next_project.remove_travel_day()
-        elif self.end_date >= next_project.start_date:
-            self.remove_travel_day()
-            next_project.remove_travel_day()
-            if not next_project.is_high_cost:
-                next_project.full_days -= project_overlap
-            else:
-                self.full_days -= project_overlap
-
+def handle_overlap(current_project, next_project):
+    project_overlap = (current_project.end_date - next_project.start_date).days + 1
+    if project_overlap == 0:
+        # Projects 1 and 2 in test_contiguous_projects. overlap 2
+        current_project.remove_travel_day()
+        next_project.remove_travel_day()
+    elif project_overlap > 0:
+        current_project.remove_travel_day()
+        next_project.remove_travel_day()
+        if not next_project.is_high_cost:
+            next_project.full_days -= project_overlap
+        else:
+            current_project.full_days -= project_overlap
 
 def calculate_reimbursement(list_of_strings):
     # Handles empty project sets
@@ -85,9 +84,7 @@ def calculate_reimbursement(list_of_strings):
         return current_project.calculate_project_cost()
     total = 0
     for next_project in starting_iter:
-        project_overlap = current_project.project_overlap(next_project)
-        if project_overlap > 0:
-            current_project.handle_overlap(next_project, project_overlap)
+        handle_overlap(current_project, next_project)         
         total += current_project.calculate_project_cost()
         current_project = next_project
     # Final Project costs
