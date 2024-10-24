@@ -70,16 +70,19 @@ def handle_contiguous_projects(current_project, next_project):
 
 
 def handle_overlap(current_project, next_project, project_overlap):
-    # Need to handle single day projects differently?
-    current_project.replace_travel_day()
-    next_project.replace_travel_day()
-    if not next_project.is_high_cost:
-        next_project.full_days -= project_overlap
+    if current_project.is_high_cost:
+        donor_project = next_project
+        safe_project = current_project
     else:
-        current_project.full_days -= project_overlap
+        donor_project = current_project
+        safe_project = next_project
+    safe_project.replace_travel_day()
+    if donor_project.travel_days > 0:
+        donor_project.travel_days -= 1
+        project_overlap -= 1 
+    donor_project.full_days -= project_overlap
     # Need a test of overlapping low cost projects longer than a day
     # Also need a test of longer overlaps
-        pass
 
 
 def calculate_reimbursement(list_of_strings):
