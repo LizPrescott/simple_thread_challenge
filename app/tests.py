@@ -82,4 +82,23 @@ def test_travel_day_perfect_overlap():
     assert calculate_reimbursement(input) == sum([
       project_1_total, project_2_total, project_3_total, project_4_total
     ])
+
+
+def test_travel_day_multi_overlap():
+    input = [
+      "Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/2/15",
+      "Project 2: Low Cost City Start Date: 9/1/15 End Date: 9/2/15",
+      "Project 3: High Cost City Start Date: 9/3/15 End Date: 9/3/15",
+      "Project 4: High Cost City Start Date: 9/3/15 End Date: 9/4/15"
+    ]
+    project_1_total = 0
+    project_2_total = TRAVEL_DAY_LOW + FULL_DAY_LOW
+    project_3_total = FULL_DAY_HIGH
+    project_4_total = TRAVEL_DAY_HIGH
+    # assert calculate_total(input) == sum([
+    #   project_1_total, project_2_total, project_3_total, project_4_total
+    # ])
+    assert calculate_reimbursement(input) == sum([
+      project_1_total, project_2_total, project_3_total, project_4_total
+    ])
     

@@ -73,7 +73,8 @@ def handle_opening_pair(first_project, second_project):
         if first_project.travel_days > 1:
             first_project.replace_travel_day()
     if project_overlap >= first_project.duration > 0:
-        first_project.replace_travel_day()
+        while first_project.travel_days > 0:
+            first_project.replace_travel_day()
         while project_overlap > 0 and first_project.full_days > 0:
             first_project.full_days -= 1
             project_overlap -= 1
