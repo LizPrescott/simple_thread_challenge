@@ -1,6 +1,7 @@
 
 from datetime import date
 from itertools import pairwise
+from more_itertools import peekable # `pip install more-itertools`
 from app.constants import (
     FULL_DAY_HIGH,
     FULL_DAY_LOW,
@@ -31,7 +32,6 @@ class Project:
         # +1 to account for opening days
         self.duration = (self.end_date - self.start_date).days + 1
         self.travel_days = min(2, self.duration)
-
 
     @staticmethod
     def parse_date(date_string):
@@ -65,6 +65,12 @@ class Project:
         return max((self.full_days * full_day_cost) + (travel_day_cost * self.travel_days), 0)
 
 
+def handle_opening_pair(first_project, second_project):
+    # Even if projects are contiguous, opening day is still a travel day
+    if (first_project.end_date - second_project.start_date).days + 1 == 0:
+        second_project.replace_travel_day()
+
+
 def handle_contiguous_projects(current_project, next_project):
     current_project.replace_travel_day()
     next_project.replace_travel_day()
@@ -90,12 +96,19 @@ def calculate_reimbursement(list_of_strings):
     # Handles empty project sets
     if not list_of_strings:
         return
-    starting_iter = iter(Reimbursement(list_of_strings))
+    project_set = Reimbursement(list_of_strings)
+    starting_iter = peekable(iter(project_set))
     # Single project is a special case
     if len(list_of_strings) == 1:
         only_project = next(starting_iter)
         return only_project.calculate_project_cost()
-    total = 0
+    first_project = next(starting_iter)
+    second_project = starting_iter.peek()
+    handle_opening_pair(
+        first_project,
+        second_project
+    )
+    total = first_project.calculate_project_cost()
     for current_project, next_project in pairwise(starting_iter):
         project_overlap = (current_project.end_date - next_project.start_date).days + 1
         if project_overlap == 0:
@@ -103,7 +116,8 @@ def calculate_reimbursement(list_of_strings):
         if project_overlap > 0:
             handle_overlap(current_project, next_project, project_overlap)
         total += current_project.calculate_project_cost()
-    if not next_project.travel_days:
-        next_project.restore_travel_day()
-    total += next_project.calculate_project_cost()
+    final_project = project_set.projects[-1]
+    if final_project.travel_days == 0:
+        final_project.restore_travel_day()
+    total += final_project.calculate_project_cost()
     return total
