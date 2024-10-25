@@ -66,9 +66,17 @@ class Project:
 
 
 def handle_opening_pair(first_project, second_project):
+    project_overlap = (first_project.end_date - second_project.start_date).days + 1
     # Even if projects are contiguous, opening day is still a travel day
-    if (first_project.end_date - second_project.start_date).days + 1 == 0:
+    if project_overlap == 0:
         second_project.replace_travel_day()
+        if first_project.travel_days > 1:
+            first_project.replace_travel_day()
+    if project_overlap >= first_project.duration > 0:
+        first_project.replace_travel_day()
+        while project_overlap > 0 and first_project.full_days > 0:
+            first_project.full_days -= 1
+            project_overlap -= 1
 
 
 def handle_contiguous_projects(current_project, next_project):
@@ -83,13 +91,13 @@ def handle_overlap(current_project, next_project, project_overlap):
     else:
         donor_project = current_project
         safe_project = next_project
-    safe_project.replace_travel_day()
+    if safe_project.travel_days > 0:
+        safe_project.replace_travel_day()
     if donor_project.travel_days > 0:
         donor_project.travel_days -= 1
-        project_overlap -= 1 
+        project_overlap -= 1
     donor_project.full_days -= project_overlap
     # Need a test of overlapping low cost projects longer than a day
-    # Also need a test of longer overlaps
 
 
 def calculate_reimbursement(list_of_strings):
@@ -102,13 +110,17 @@ def calculate_reimbursement(list_of_strings):
     if len(list_of_strings) == 1:
         only_project = next(starting_iter)
         return only_project.calculate_project_cost()
-    first_project = next(starting_iter)
-    second_project = starting_iter.peek()
-    handle_opening_pair(
-        first_project,
-        second_project
-    )
-    total = first_project.calculate_project_cost()
+    total = 0
+    # Find opening travel day
+    while total == 0:
+        first_project = next(starting_iter)
+        second_project = starting_iter.peek()
+        handle_opening_pair(
+            first_project,
+            second_project
+        )
+        total = first_project.calculate_project_cost()
+    # Iterator will have already exhausted first travel project
     for current_project, next_project in pairwise(starting_iter):
         project_overlap = (current_project.end_date - next_project.start_date).days + 1
         if project_overlap == 0:
