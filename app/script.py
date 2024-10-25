@@ -1,5 +1,6 @@
 
 from datetime import date
+from itertools import pairwise
 from app.constants import (
     FULL_DAY_HIGH,
     FULL_DAY_LOW,
@@ -90,20 +91,19 @@ def calculate_reimbursement(list_of_strings):
     if not list_of_strings:
         return
     starting_iter = iter(Reimbursement(list_of_strings))
-    current_project = next(starting_iter)
     # Single project is a special case
     if len(list_of_strings) == 1:
-        return current_project.calculate_project_cost()
+        only_project = next(starting_iter)
+        return only_project.calculate_project_cost()
     total = 0
-    for next_project in starting_iter:
+    for current_project, next_project in pairwise(starting_iter):
         project_overlap = (current_project.end_date - next_project.start_date).days + 1
         if project_overlap == 0:
             handle_contiguous_projects(current_project, next_project)
         if project_overlap > 0:
             handle_overlap(current_project, next_project, project_overlap)
         total += current_project.calculate_project_cost()
-        current_project = next_project
     if not next_project.travel_days:
-        next_project.restore_travel_day()   
+        next_project.restore_travel_day()
     total += next_project.calculate_project_cost()
     return total
