@@ -1,7 +1,7 @@
 
 from datetime import date
 from itertools import pairwise
-from more_itertools import peekable # `pip install more-itertools`
+from more_itertools import peekable
 from app.constants import (
     FULL_DAY_HIGH,
     FULL_DAY_LOW,
@@ -20,6 +20,33 @@ class Reimbursement:
     def __iter__(self):
         for project in self.projects:
             yield project
+
+    def calculate(self):
+        # Handles empty project sets
+        if not self.projects:
+            return
+        project_set = self.projects
+        starting_iter = peekable(iter(project_set))
+        # Single project is a special case
+        if len(project_set) == 1:
+            only_project = next(starting_iter)
+            return only_project.calculate_project_cost()
+        total = 0
+        # Find opening travel day
+        while total == 0:
+            first_project = next(starting_iter)
+            second_project = starting_iter.peek()
+            ProjectPair(first_project, second_project).handle_opening_pair()
+            total = first_project.calculate_project_cost()
+        # Iterator will have already exhausted first travel project
+        for current_project, next_project in pairwise(starting_iter):
+            ProjectPair(current_project, next_project).resolve()
+            total += current_project.calculate_project_cost()
+        final_project = project_set[-1]
+        if final_project.travel_days == 0:
+            final_project.restore_travel_day()
+        total += final_project.calculate_project_cost()
+        return total
 
 
 class Project:
@@ -62,75 +89,58 @@ class Project:
         else:
             travel_day_cost = TRAVEL_DAY_LOW
             full_day_cost = FULL_DAY_LOW
-        return max((self.full_days * full_day_cost) + (travel_day_cost * self.travel_days), 0)
+        return max(
+            sum([  # Careful here
+                # Use list instead of set, to avoid the dedup behavior of sets
+                (self.full_days * full_day_cost),
+                (travel_day_cost * self.travel_days)
+                                                 ]), 0
+            )
 
 
-def handle_opening_pair(first_project, second_project):
-    project_overlap = (first_project.end_date - second_project.start_date).days + 1
-    # Even if projects are contiguous, opening day is still a travel day
-    if project_overlap == 0:
-        second_project.replace_travel_day()
-        if first_project.travel_days > 1:
-            first_project.replace_travel_day()
-    if project_overlap >= first_project.duration > 0:
-        while first_project.travel_days > 0:
-            first_project.replace_travel_day()
-        while project_overlap > 0 and first_project.full_days > 0:
-            first_project.full_days -= 1
-            project_overlap -= 1
+class ProjectPair:
+    def __init__(self, project_a, project_b):
+        self.project_a = project_a
+        self.project_b = project_b
+        self.overlap = (self.project_a.end_date - self.project_b.start_date).days + 1
 
+    def handle_opening_pair(self):
+        # Even if projects are contiguous, opening day is still a travel day
+        first_project = self.project_a
+        second_project = self.project_b
+        if self.overlap == 0:
+            second_project.replace_travel_day()
+            if first_project.travel_days > 1:
+                first_project.replace_travel_day()
+        if self.overlap >= first_project.duration > 0:
+            while first_project.travel_days > 0:
+                first_project.replace_travel_day()
+            while self.overlap > 0 and first_project.full_days > 0:
+                first_project.full_days -= 1
+                self.overlap -= 1
 
-def handle_contiguous_projects(current_project, next_project):
-    current_project.replace_travel_day()
-    next_project.replace_travel_day()
+    def handle_contiguous_projects(self):
+        self.project_a.replace_travel_day()
+        self.project_b.replace_travel_day()
 
+    def handle_overlap(self):
+        current_project = self.project_a
+        next_project = self.project_b
+        if current_project.is_high_cost:
+            donor_project = next_project
+            safe_project = current_project
+        else:
+            donor_project = current_project
+            safe_project = next_project
+        if safe_project.travel_days > 0:
+            safe_project.replace_travel_day()
+        if donor_project.travel_days > 0:
+            donor_project.travel_days -= 1
+            self.overlap -= 1
+        donor_project.full_days -= self.overlap
 
-def handle_overlap(current_project, next_project, project_overlap):
-    if current_project.is_high_cost:
-        donor_project = next_project
-        safe_project = current_project
-    else:
-        donor_project = current_project
-        safe_project = next_project
-    if safe_project.travel_days > 0:
-        safe_project.replace_travel_day()
-    if donor_project.travel_days > 0:
-        donor_project.travel_days -= 1
-        project_overlap -= 1
-    donor_project.full_days -= project_overlap
-    # Need a test of overlapping low cost projects longer than a day
-
-
-def calculate_reimbursement(list_of_strings):
-    # Handles empty project sets
-    if not list_of_strings:
-        return
-    project_set = Reimbursement(list_of_strings)
-    starting_iter = peekable(iter(project_set))
-    # Single project is a special case
-    if len(list_of_strings) == 1:
-        only_project = next(starting_iter)
-        return only_project.calculate_project_cost()
-    total = 0
-    # Find opening travel day
-    while total == 0:
-        first_project = next(starting_iter)
-        second_project = starting_iter.peek()
-        handle_opening_pair(
-            first_project,
-            second_project
-        )
-        total = first_project.calculate_project_cost()
-    # Iterator will have already exhausted first travel project
-    for current_project, next_project in pairwise(starting_iter):
-        project_overlap = (current_project.end_date - next_project.start_date).days + 1
-        if project_overlap == 0:
-            handle_contiguous_projects(current_project, next_project)
-        if project_overlap > 0:
-            handle_overlap(current_project, next_project, project_overlap)
-        total += current_project.calculate_project_cost()
-    final_project = project_set.projects[-1]
-    if final_project.travel_days == 0:
-        final_project.restore_travel_day()
-    total += final_project.calculate_project_cost()
-    return total
+    def resolve(self):
+        if self.overlap == 0:
+            self.handle_contiguous_projects()
+        if self.overlap > 0:
+            self.handle_overlap()
