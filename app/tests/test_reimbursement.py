@@ -12,6 +12,10 @@ and that projects in each set will be chronological
 """
 
 
+def test_empty():
+    assert Reimbursement([]).calculate() == 0
+
+
 def test_base_case():
     input = ["Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/3/15"]
     project_1_total = (TRAVEL_DAY_LOW * 2) + FULL_DAY_LOW

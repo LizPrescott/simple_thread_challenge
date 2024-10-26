@@ -17,14 +17,10 @@ class Reimbursement:
     def __init__(self, list_of_strings):
         self.projects = [Project.from_string(x) for x in list_of_strings]
 
-    def __iter__(self):
-        for project in self.projects:
-            yield project
-
     def calculate(self):
         # Handles empty project sets
         if not self.projects:
-            return
+            return 0
         project_set = self.projects
         starting_iter = peekable(iter(project_set))
         # Single project is a special case
