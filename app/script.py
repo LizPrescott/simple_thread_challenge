@@ -103,19 +103,21 @@ class ProjectPair:
         self.safe_project = project_a if project_a.is_high_cost else project_b
 
     def handle_opening_pair(self):
-        # Even if projects are contiguous, opening day is still a travel day
         first_project = self.project_a
         second_project = self.project_b
-        if self.overlap == 0:
+        if self.overlap == 0 and first_project.travel_days > 1:
             second_project.swap_out_travel_day()
-            if first_project.travel_days > 1:
-                first_project.swap_out_travel_day()
-        if self.overlap >= first_project.duration > 0:
+            first_project.swap_out_travel_day()
+        elif self.overlap == 0:
+            second_project.swap_out_travel_day()
+        elif self.overlap >= first_project.duration > 0:
             while first_project.travel_days > 0:
-                first_project.swap_out_travel_day()
+              first_project.swap_out_travel_day()
             while self.overlap > 0 and first_project.full_days > 0:
                 first_project.full_days -= 1
                 self.overlap -= 1
+        elif self.overlap >= 0:
+            self.handle_overlap()
 
     def handle_contiguous_projects(self):
         self.project_a.swap_out_travel_day()
