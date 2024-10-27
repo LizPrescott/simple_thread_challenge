@@ -70,7 +70,7 @@ class Project:
         is_high_cost = "High" in cost_string
         return cls(name, start_date, end_date, is_high_cost)
 
-    def replace_travel_day(self):
+    def swap_out_travel_day(self):
         self.travel_days -= 1
         self.full_days += 1
 
@@ -107,23 +107,23 @@ class ProjectPair:
         first_project = self.project_a
         second_project = self.project_b
         if self.overlap == 0:
-            second_project.replace_travel_day()
+            second_project.swap_out_travel_day()
             if first_project.travel_days > 1:
-                first_project.replace_travel_day()
+                first_project.swap_out_travel_day()
         if self.overlap >= first_project.duration > 0:
             while first_project.travel_days > 0:
-                first_project.replace_travel_day()
+                first_project.swap_out_travel_day()
             while self.overlap > 0 and first_project.full_days > 0:
                 first_project.full_days -= 1
                 self.overlap -= 1
 
     def handle_contiguous_projects(self):
-        self.project_a.replace_travel_day()
-        self.project_b.replace_travel_day()
+        self.project_a.swap_out_travel_day()
+        self.project_b.swap_out_travel_day()
 
     def handle_overlap(self):
         if self.safe_project.travel_days > 0:
-            self.safe_project.replace_travel_day()
+            self.safe_project.swap_out_travel_day()
         if self.donor_project.travel_days > 0:
             self.donor_project.travel_days -= 1
             self.overlap -= 1
