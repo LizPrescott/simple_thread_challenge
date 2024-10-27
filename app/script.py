@@ -99,6 +99,8 @@ class ProjectPair:
         self.project_a = project_a
         self.project_b = project_b
         self.overlap = (self.project_a.end_date - self.project_b.start_date).days + 1
+        self.donor_project = project_b if project_a.is_high_cost else project_a
+        self.safe_project = project_a if project_a.is_high_cost else project_b
 
     def handle_opening_pair(self):
         # Even if projects are contiguous, opening day is still a travel day
@@ -120,20 +122,12 @@ class ProjectPair:
         self.project_b.replace_travel_day()
 
     def handle_overlap(self):
-        current_project = self.project_a
-        next_project = self.project_b
-        if current_project.is_high_cost:
-            donor_project = next_project
-            safe_project = current_project
-        else:
-            donor_project = current_project
-            safe_project = next_project
-        if safe_project.travel_days > 0:
-            safe_project.replace_travel_day()
-        if donor_project.travel_days > 0:
-            donor_project.travel_days -= 1
+        if self.safe_project.travel_days > 0:
+            self.safe_project.replace_travel_day()
+        if self.donor_project.travel_days > 0:
+            self.donor_project.travel_days -= 1
             self.overlap -= 1
-        donor_project.full_days -= self.overlap
+        self.donor_project.full_days -= self.overlap
 
     def resolve(self):
         if self.overlap == 0:
