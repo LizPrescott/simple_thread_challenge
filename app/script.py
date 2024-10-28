@@ -78,6 +78,13 @@ class Project:
         self.travel_days += 1
         self.full_days -= 1
 
+    def decrement_all_days(self, decrement_by):
+        while self.travel_days > 0:
+            self.swap_out_travel_day()
+        while decrement_by > 0 and self.full_days > 0:
+            self.full_days -= 1
+            decrement_by -= 1
+
     def calculate_project_cost(self):
         if self.is_high_cost:
             travel_day_cost = TRAVEL_DAY_HIGH
@@ -98,30 +105,31 @@ class ProjectPair:
     def __init__(self, project_a, project_b):
         self.project_a = project_a
         self.project_b = project_b
-        self.overlap = (self.project_a.end_date - self.project_b.start_date).days + 1
+        self.overlap = self.__overlap()
         self.donor_project = project_b if project_a.is_high_cost else project_a
         self.safe_project = project_a if project_a.is_high_cost else project_b
+        self.contiguous = self.overlap == 0
+
+    def __overlap(self):
+        return (self.project_a.end_date - self.project_b.start_date).days + 1
 
     def handle_opening_pair(self):
-        first_project = self.project_a
         second_project = self.project_b
-        if self.overlap == 0 and first_project.travel_days > 1:
+        # What if first project is the high cost one
+        if self.contiguous and self.donor_project.travel_days > 1:
+            self.handle_contiguous_projects()
+        elif self.contiguous:
             second_project.swap_out_travel_day()
-            first_project.swap_out_travel_day()
-        elif self.overlap == 0:
-            second_project.swap_out_travel_day()
-        elif self.overlap >= first_project.duration > 0:
-            while first_project.travel_days > 0:
-              first_project.swap_out_travel_day()
-            while self.overlap > 0 and first_project.full_days > 0:
-                first_project.full_days -= 1
-                self.overlap -= 1
+        elif self.overlap >= self.donor_project.duration > 0:
+            self.donor_project.decrement_all_days(self.overlap)
         elif self.overlap >= 0:
             self.handle_overlap()
 
     def handle_contiguous_projects(self):
-        self.project_a.swap_out_travel_day()
-        self.project_b.swap_out_travel_day()
+        if self.project_a.travel_days > 0:
+            self.project_a.swap_out_travel_day()
+        if self.project_b.travel_days > 0:
+            self.project_b.swap_out_travel_day()
 
     def handle_overlap(self):
         if self.safe_project.travel_days > 0:
@@ -129,10 +137,15 @@ class ProjectPair:
         if self.donor_project.travel_days > 0:
             self.donor_project.travel_days -= 1
             self.overlap -= 1
-        self.donor_project.full_days -= self.overlap
+        self.donor_project.full_days = max(
+            self.donor_project.full_days - self.overlap, 0
+            )
 
     def resolve(self):
-        if self.overlap == 0:
+        if self.contiguous:
             self.handle_contiguous_projects()
-        if self.overlap > 0:
+        elif self.overlap >= self.donor_project.duration > 0:
+            self.safe_project.swap_out_travel_day()
+            self.donor_project.decrement_all_days(self.overlap)
+        elif self.overlap > 0:
             self.handle_overlap()
