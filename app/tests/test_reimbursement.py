@@ -1,3 +1,4 @@
+import pytest
 from app.constants import (
   FULL_DAY_HIGH,
   FULL_DAY_LOW,
@@ -69,39 +70,39 @@ def test_contiguous_projects():
     # ])
 
 
-def test_travel_day_perfect_overlap():
+# Covers opening pair where opening project is low cost
+@pytest.mark.parametrize('project_2_cost, project_2_result', [
+    ('Low', TRAVEL_DAY_LOW), ('High', TRAVEL_DAY_HIGH)
+    ])
+def test_travel_day_perfect_overlap(project_2_cost, project_2_result):
     input = [
       "Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/1/15",
-      "Project 2: Low Cost City Start Date: 9/1/15 End Date: 9/1/15",
+      f"Project 2: {project_2_cost} Cost City Start Date: 9/1/15 End Date: 9/1/15",
       "Project 3: High Cost City Start Date: 9/2/15 End Date: 9/2/15",
       "Project 4: High Cost City Start Date: 9/2/15 End Date: 9/3/15"
     ]
     project_1_total = 0
-    project_2_total = TRAVEL_DAY_LOW
+    project_2_total = project_2_result
     project_3_total = FULL_DAY_HIGH
     project_4_total = TRAVEL_DAY_HIGH
-    # assert calculate_total(input) == sum([
-    #   project_1_total, project_2_total, project_3_total, project_4_total
-    # ])
     assert Reimbursement(input).calculate() == sum([
       project_1_total, project_2_total, project_3_total, project_4_total
     ])
 
 
-def test_travel_day_multi_overlap():
+# Covers opening pair overlap with high cost
+@pytest.mark.parametrize('project_2_cost', ['High', 'Low'])
+def test_travel_day_multi_overlap(project_2_cost):
     input = [
-      "Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/2/15",
-      "Project 2: Low Cost City Start Date: 9/1/15 End Date: 9/2/15",
+      "Project 1: High Cost City Start Date: 9/1/15 End Date: 9/2/15",
+      f"Project 2: {project_2_cost} Cost City Start Date: 9/1/15 End Date: 9/2/15",
       "Project 3: High Cost City Start Date: 9/3/15 End Date: 9/3/15",
       "Project 4: High Cost City Start Date: 9/3/15 End Date: 9/4/15"
     ]
-    project_1_total = 0
-    project_2_total = TRAVEL_DAY_LOW + FULL_DAY_LOW
+    project_1_total = TRAVEL_DAY_HIGH + FULL_DAY_HIGH
+    project_2_total = 0
     project_3_total = FULL_DAY_HIGH
     project_4_total = TRAVEL_DAY_HIGH
-    # assert calculate_total(input) == sum([
-    #   project_1_total, project_2_total, project_3_total, project_4_total
-    # ])
     assert Reimbursement(input).calculate() == sum([
       project_1_total, project_2_total, project_3_total, project_4_total
     ])

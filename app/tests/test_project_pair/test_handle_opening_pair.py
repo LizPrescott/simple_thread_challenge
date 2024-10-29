@@ -93,6 +93,7 @@ def test_contiguous(project_a_high_cost, project_b_high_cost):
     assert project_b.travel_days == 1
 
 
+#TODO Move this to a test of Reimbursement.calculate()
 @pytest.mark.parametrize('project_b_high_cost', [True, False])
 def test_short_opener(project_b_high_cost):
     project_a = Project(
@@ -153,6 +154,7 @@ def test_short_high_cost_opener(project_b_high_cost):
     assert project_b.travel_days == 1
 
 
+# TODO Move this to a test of Reimbursement.calculate()
 @pytest.mark.parametrize('project_b_high_cost', [True, False])
 def test_perfect_overlap_low(project_b_high_cost):
     project_a = Project(
@@ -182,6 +184,8 @@ def test_perfect_overlap_low(project_b_high_cost):
     assert project_b.full_days == 2
     assert project_b.travel_days == 2
 
+
+# TODO Ensure this is covered by test in Reimbursement.calculate
 @pytest.mark.parametrize('project_b_high_cost', [True, False])
 def test_perfect_overlap(project_b_high_cost):
     project_a = Project(
