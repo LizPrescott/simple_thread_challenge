@@ -103,38 +103,33 @@ class Project:
 
 class ProjectPair:
     def __init__(self, project_a, project_b):
-        self.project_a = project_a
-        self.project_b = project_b
-        self.overlap = self.__overlap()
+        self.overlap = self.__overlap(project_a, project_b)
         self.donor_project = project_b if project_a.is_high_cost else project_a
         self.safe_project = project_a if project_a.is_high_cost else project_b
         self.contiguous = self.overlap == 0
 
-    def __overlap(self):
-        return (self.project_a.end_date - self.project_b.start_date).days + 1
+    @staticmethod
+    def __overlap(project_a, project_b):
+        return (project_a.end_date - project_b.start_date).days + 1
 
     def handle_opening_pair(self):
-        second_project = self.project_b
-        # What if first project is the high cost one
-        if self.contiguous and self.donor_project.travel_days > 1:
-            self.handle_contiguous_projects()
-        elif self.contiguous:
-            second_project.swap_out_travel_day()
+        if self.contiguous:
+            self.handle_contiguous_projects(1)
         elif self.overlap >= self.donor_project.duration > 0:
             self.donor_project.decrement_all_days(self.overlap)
         elif self.overlap >= 0:
-            self.handle_overlap()
+            self.handle_overlap(1)
 
-    def handle_contiguous_projects(self):
-        if self.project_a.travel_days > 0:
-            self.project_a.swap_out_travel_day()
-        if self.project_b.travel_days > 0:
-            self.project_b.swap_out_travel_day()
-
-    def handle_overlap(self):
-        if self.safe_project.travel_days > 0:
+    def handle_contiguous_projects(self, min_travel_days=0):
+        if self.donor_project.travel_days > min_travel_days:
+            self.donor_project.swap_out_travel_day()
+        if self.safe_project.travel_days > min_travel_days:
             self.safe_project.swap_out_travel_day()
-        if self.donor_project.travel_days > 0:
+
+    def handle_overlap(self, min_travel_days=0):
+        if self.safe_project.travel_days > min_travel_days:
+            self.safe_project.swap_out_travel_day()
+        if self.donor_project.travel_days > min_travel_days:
             self.donor_project.travel_days -= 1
             self.overlap -= 1
         self.donor_project.full_days = max(
