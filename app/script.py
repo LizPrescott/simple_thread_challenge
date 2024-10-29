@@ -1,7 +1,6 @@
 
 from datetime import date
 from itertools import pairwise
-from more_itertools import peekable
 from app.constants import (
     FULL_DAY_HIGH,
     FULL_DAY_LOW,
@@ -28,27 +27,24 @@ class Reimbursement:
         if not self.projects:
             return 0
         project_set = self.projects
-        starting_iter = peekable(iter(project_set))
         # Single project is a special case
         if len(project_set) == 1:
-            only_project = next(starting_iter)
-            return only_project.calculate_project_cost()
+            only_project = project_set[0]
+            return only_project.cost()
         total = 0
-        # Find opening travel day
         self.dedup()
-        while total == 0:
-            first_project = next(starting_iter)
-            second_project = starting_iter.peek()
-            ProjectPair(first_project, second_project).resolve(1)
-            total = first_project.calculate_project_cost()
+        first_project = project_set[0]
+        second_project = project_set[1]
+        ProjectPair(first_project, second_project).resolve(1)
+        total = first_project.cost()
         # Iterator will have already exhausted first travel project
-        for current_project, next_project in pairwise(starting_iter):
+        for current_project, next_project in pairwise(project_set[1:]):
             ProjectPair(current_project, next_project).resolve()
-            total += current_project.calculate_project_cost()
+            total += current_project.cost()
         final_project = project_set[-1]
         if final_project.travel_days == 0:
             final_project.restore_travel_day()
-        total += final_project.calculate_project_cost()
+        total += final_project.cost()
         return total
 
 
@@ -85,14 +81,7 @@ class Project:
         self.travel_days += 1
         self.full_days -= 1
 
-    def decrement_all_days(self, decrement_by):
-        while self.travel_days > 0:
-            self.swap_out_travel_day()
-        while decrement_by > 0 and self.full_days > 0:
-            self.full_days -= 1
-            decrement_by -= 1
-
-    def calculate_project_cost(self):
+    def cost(self):
         if self.is_high_cost:
             travel_day_cost = TRAVEL_DAY_HIGH
             full_day_cost = FULL_DAY_HIGH
