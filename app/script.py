@@ -17,6 +17,10 @@ class Reimbursement:
         self.projects = [Project.from_string(x) for x in list_of_strings]
 
     def dedup(self):
+        '''
+        Removes projects whose costs are completely covered by other projects
+        This is another function that only works if projects are in order
+        '''
         for current_project, next_project in pairwise(self.projects):
             pair = ProjectPair(current_project, next_project)
             if pair.perfect_overlap:
@@ -37,7 +41,6 @@ class Reimbursement:
         second_project = project_set[1]
         ProjectPair(first_project, second_project).resolve(1)
         total = first_project.cost()
-        # Iterator will have already exhausted first travel project
         for current_project, next_project in pairwise(project_set[1:]):
             ProjectPair(current_project, next_project).resolve()
             total += current_project.cost()
@@ -102,7 +105,6 @@ class ProjectPair:
         self.overlap = self.__overlap(project_a, project_b)
         self.donor_project = project_b if project_a.is_high_cost else project_a
         self.safe_project = project_a if project_a.is_high_cost else project_b
-        self.contiguous = self.overlap == 0
         self.perfect_overlap = self.overlap >= self.donor_project.duration > 0
 
     @staticmethod
@@ -126,7 +128,7 @@ class ProjectPair:
             )
 
     def resolve(self, min_travel_days=0):
-        if self.contiguous:
+        if self.overlap == 0:
             self.handle_contiguous_projects(min_travel_days)
         elif self.overlap > 0:
             self.handle_overlap(min_travel_days)

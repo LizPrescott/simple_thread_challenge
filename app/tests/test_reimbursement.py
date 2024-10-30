@@ -107,3 +107,51 @@ def test_travel_day_multi_overlap(project_2_cost):
       project_1_total, project_2_total, project_3_total, project_4_total
     ])
   
+
+@pytest.mark.parametrize('project_2_cost, project_2_result', [
+    ('Low', TRAVEL_DAY_LOW*2 + FULL_DAY_LOW*2),
+    ('High', TRAVEL_DAY_HIGH*2 + FULL_DAY_HIGH*2)
+    ])
+def test_short_opener(project_2_cost, project_2_result):
+    input = [
+        "Project 1: Low Cost City Start Date: 3/15/15 End Date: 3/15/15",
+        f"Project 2: {project_2_cost} Cost City Start Date: 3/15/15 End Date: 3/18/15",
+        "Project 3: High Cost City Start Date: 4/1/15 End Date: 4/3/15"
+    ]
+    project_1_total = 0
+    project_2_total = project_2_result
+    project_3_total = TRAVEL_DAY_HIGH*2 + FULL_DAY_HIGH
+    assert Reimbursement(input).calculate() == sum([
+        project_1_total, project_2_total, project_3_total
+    ])
+
+
+@pytest.mark.parametrize('project_2_cost, project_2_result', [
+    ('Low', TRAVEL_DAY_LOW + FULL_DAY_LOW*2),
+    ('High', TRAVEL_DAY_HIGH + FULL_DAY_HIGH*2)
+    ])
+def test_high_cost_short_opener(project_2_cost, project_2_result):
+    input = [
+        "Project 1: High Cost City Start Date: 3/15/15 End Date: 3/15/15",
+        f"Project 2: {project_2_cost} Cost City Start Date: 3/15/15 End Date: 3/18/15",
+        "Project 3: High Cost City Start Date: 4/1/15 End Date: 4/3/15"
+    ]
+    project_1_total = TRAVEL_DAY_HIGH
+    project_2_total = project_2_result
+    project_3_total = TRAVEL_DAY_HIGH*2 + FULL_DAY_HIGH
+    assert Reimbursement(input).calculate() == sum([
+        project_1_total, project_2_total, project_3_total
+    ])
+
+
+@pytest.mark.parametrize('project_3_cost', ['High', 'Low'])
+def test_mid_set_overlap(project_3_cost):
+    input = [
+         "Project 1: Low Cost City Start Date: 1/1/15 End Date: 1/1/15",
+         "Project 2: High Cost City Start Date: 3/25/15 End Date: 3/28/15",
+         f"Project 3: {project_3_cost} Cost City Start Date: 3/25/15 End Date: 3/28/15"
+    ]
+    assert Reimbursement(input).calculate() == sum([
+        TRAVEL_DAY_LOW,
+        (TRAVEL_DAY_HIGH*2)+(FULL_DAY_HIGH*2)
+    ])
