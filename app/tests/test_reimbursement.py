@@ -20,8 +20,10 @@ def test_empty():
 def test_base_case():
     input = ["Project 1: Low Cost City Start Date: 9/1/15 End Date: 9/3/15"]
     project_1_total = (TRAVEL_DAY_LOW * 2) + FULL_DAY_LOW
-    assert Reimbursement(input).calculate() == project_1_total
-    # assert calculate_total(input) == project_1_total
+    reimbursement_total = Reimbursement(input).calculate()
+
+    assert reimbursement_total  == project_1_total
+    print(f"Scenario 1 Total: {project_1_total}")
 
 
 def test_no_overlap():
@@ -45,12 +47,12 @@ def test_high_to_low_overlap():
     project_1_total = TRAVEL_DAY_LOW
     project_2_total = FULL_DAY_HIGH*5  # 9/2 + 9/3 + 9/4 + 9/5 + 9/6
     project_3_total = TRAVEL_DAY_LOW + FULL_DAY_LOW  # 9/7 + 9/8
-    assert Reimbursement(input).calculate() == sum([
+    reimbursement_total = Reimbursement(input).calculate()
+
+    assert reimbursement_total  == sum([
          project_1_total, project_2_total, project_3_total
          ])
-    # assert calculate_total(input) == sum([
-    #      project_1_total, project_2_total, project_3_total
-    #      ])
+    print(f"Scenario 2 Total: {reimbursement_total}")
 
 
 def test_contiguous_projects():
@@ -62,12 +64,12 @@ def test_contiguous_projects():
     project_1_total = ((TRAVEL_DAY_LOW*2) + FULL_DAY_LOW)
     project_2_total = (TRAVEL_DAY_HIGH + (FULL_DAY_HIGH*2))
     project_3_total = TRAVEL_DAY_HIGH
-    assert Reimbursement(input).calculate() == sum([  # sum([165, 225, 55])
+    reimbursement_total = Reimbursement(input).calculate()
+
+    assert reimbursement_total  == sum([
       project_1_total, project_2_total, project_3_total
     ])
-    # assert calculate_total(input) == sum([
-    #   project_1_total, project_2_total, project_3_total
-    # ])
+    print(f"Scenario 3 Total: {reimbursement_total}")
 
 
 # Covers opening pair where opening project is low cost
@@ -85,9 +87,13 @@ def test_travel_day_perfect_overlap(project_2_cost, project_2_result):
     project_2_total = project_2_result
     project_3_total = FULL_DAY_HIGH
     project_4_total = TRAVEL_DAY_HIGH
-    assert Reimbursement(input).calculate() == sum([
+    reimbursement_total = Reimbursement(input).calculate()
+
+    assert reimbursement_total  == sum([
       project_1_total, project_2_total, project_3_total, project_4_total
     ])
+    if (project_2_result == TRAVEL_DAY_LOW):
+      print(f"Scenario 4 Total: {reimbursement_total}")
 
 
 # Covers opening pair overlap with high cost
@@ -155,3 +161,4 @@ def test_mid_set_overlap(project_3_cost):
         TRAVEL_DAY_LOW,
         (TRAVEL_DAY_HIGH*2)+(FULL_DAY_HIGH*2)
     ])
+
